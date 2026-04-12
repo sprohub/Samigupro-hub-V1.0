@@ -1,5 +1,3 @@
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-
 local Window = Fluent:CreateWindow({
     Title = "Samigupro Hub | v1.5 Remazter",
     SubTitle = "UltraHub Edition",
@@ -14,8 +12,12 @@ local Window = Fluent:CreateWindow({
 local Config = {
     WalkSpeed = 16,
     NoclipEnabled = false,
+    InfJump = false,
+    FullBright = false,
+    FOV = 70,
     ESP_Boxes = false,
     ESP_Names = false,
+    ESP_Chams = false,
     Language = "Español"
 }
 
@@ -24,18 +26,22 @@ local Locales = {
     ["Español"] = {
         Player = "Gestión de Jugador", ESP = "Visualización ESP", TP = "Teletransportación", Sett = "Configuración",
         Speed = "Ajuste de Velocidad", Noc = "Atravesar Paredes", Box = "Rastreador de Cuadros", Name = "Etiquetas de Nombre",
-        Select = "Seleccionar Objetivo", Go = "Ejecutar Teleporte", Theme = "Estética del Panel",
-        Lang = "Idioma del Sistema", Cred = "Autor: Samigupro (User: roblox)", Desc = "v1.5 Remazter | UltraHub Estable"
+        Chams = "Resaltar Cuerpo (Wallhack)", Select = "Seleccionar Objetivo", Go = "Ejecutar Teleporte", 
+        Theme = "Estética del Panel", Lang = "Idioma del Sistema", Cred = "Autor: Samigupro (User: roblox)", 
+        Desc = "v1.5 Remazter | UltraHub Estable",
+        Jump = "Salto Infinito", Bright = "Brillo Total", FovT = "Campo de Visión (FOV)"
     },
     ["English"] = {
-        Player = "Player Management", ESP = "ESP Visuals", TP = "Teleportation", Sett = "System Settings",
+        Player = "Player Management", ESP = "ESP Visuals", TP = "Teleportation", Sett = "Settings",
         Speed = "Movement Speed", Noc = "Noclip Mode", Box = "Box Tracker", Name = "Name Tags",
-        Select = "Select Target", Go = "Execute Teleport", Theme = "Panel Aesthetics",
-        Lang = "System Language", Cred = "Author: Samigupro (User: roblox)", Desc = "v1.5 Remazter | Stable UltraHub"
+        Chams = "Highlight Body (Wallhack)", Select = "Select Target", Go = "Execute Teleport", 
+        Theme = "Panel Aesthetics", Lang = "System Language", Cred = "Author: Samigupro (User: roblox)", 
+        Desc = "v1.5 Remazter | Stable UltraHub",
+        Jump = "Infinite Jump", Bright = "Full Bright", FovT = "Field of View (FOV)"
     }
 }
 
--- --- BOTÓN FLOTANTE REMASTERIZADO ---
+-- --- BOTÓN FLOTANTE ---
 local OpenButton = Instance.new("ScreenGui", game:GetService("CoreGui"))
 local MainButton = Instance.new("TextButton", OpenButton)
 OpenButton.ResetOnSpawn = false
@@ -46,7 +52,7 @@ MainButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MainButton.Font = Enum.Font.GothamBold
 MainButton.TextSize = 32
-Instance.new("UICorner", MainButton).CornerRadius = UDim.new(0, 30) -- Más redondeado
+Instance.new("UICorner", MainButton).CornerRadius = UDim.new(0, 30)
 local Stroke = Instance.new("UIStroke", MainButton)
 Stroke.Thickness = 2.5
 Stroke.Color = Color3.fromRGB(0, 255, 150)
@@ -60,44 +66,57 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Ajustes", Icon = "settings" })
 }
 
-local SpdInp, NocTog, BoxTog, NamTog, TPDrop, TPBtn, ThemeDrop, LangDrop, CredPar
+local SpdInp, NocTog, JumpTog, BrightTog, FovSlid, BoxTog, NamTog, ChamsTog, TPDrop, TPBtn, ThemeDrop, LangDrop, CredPar
 
--- --- MOTOR DE CONTROL (OPTIMIZADO PARA DELTA) ---
+-- --- MOTOR JUGADOR (SPEED, NOCLIP, JUMP, FOV) ---
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if Config.InfJump then
+        game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+    end
+end)
+
 game:GetService("RunService").Stepped:Connect(function()
     if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
         game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Config.WalkSpeed
+        game.Workspace.CurrentCamera.FieldOfView = Config.FOV
         if Config.NoclipEnabled then
             for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
         end
+        if Config.FullBright then
+            game:GetService("Lighting").Brightness = 2
+            game:GetService("Lighting").ClockTime = 14
+            game:GetService("Lighting").FogEnd = 100000
+            game:GetService("Lighting").GlobalShadows = false
+        end
     end
 end)
 
-SpdInp = Tabs.Main:AddInput("Spd", { Title = "Velocidad", Default = "16", Callback = function(v)
-    Config.WalkSpeed = tonumber(v) or 16
-end})
+SpdInp = Tabs.Main:AddInput("Spd", { Title = "Ajuste de Velocidad", Default = "16", Callback = function(v) Config.WalkSpeed = tonumber(v) or 16 end})
+NocTog = Tabs.Main:AddToggle("Noc", { Title = "Atravesar Paredes", Default = false, Callback = function(v) Config.NoclipEnabled = v end})
+JumpTog = Tabs.Main:AddToggle("Jump", { Title = "Salto Infinito", Default = false, Callback = function(v) Config.InfJump = v end})
+FovSlid = Tabs.Main:AddSlider("Fov", { Title = "Campo de Visión (FOV)", Default = 70, Min = 70, Max = 120, Rounding = 0, Callback = function(v) Config.FOV = v end})
+BrightTog = Tabs.Main:AddToggle("Bright", { Title = "Brillo Total", Default = false, Callback = function(v) Config.FullBright = v end})
 
-NocTog = Tabs.Main:AddToggle("Noc", { Title = "Atravesar Paredes", Default = false, Callback = function(v)
-    Config.NoclipEnabled = v
-end})
-
--- --- SISTEMA ESP REMASTERIZADO ---
+-- --- SISTEMA ESP ---
 local function ApplyESP()
     for _, p in pairs(game.Players:GetPlayers()) do
         if p ~= game.Players.LocalPlayer and p.Character then
-            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+            local char = p.Character
+            -- Cuadros
+            local hrp = char:FindFirstChild("HumanoidRootPart")
             if hrp then
                 local b = hrp:FindFirstChild("S_Box")
                 if Config.ESP_Boxes then
                     if not b then
                         b = Instance.new("BoxHandleAdornment", hrp)
-                        b.Name = "S_Box"; b.Size = Vector3.new(4, 6, 0.5); b.AlwaysOnTop = true
-                        b.Adornee = p.Character; b.Color3 = Color3.fromRGB(255, 0, 0); b.Transparency = 0.6
+                        b.Name = "S_Box"; b.Size = Vector3.new(4, 6, 0.5); b.AlwaysOnTop = true; b.Adornee = char; b.Color3 = Color3.fromRGB(255, 0, 0); b.Transparency = 0.6
                     end
                 elseif b then b:Destroy() end
             end
-            local head = p.Character:FindFirstChild("Head")
+            -- Nombres
+            local head = char:FindFirstChild("Head")
             if head then
                 local n = head:FindFirstChild("S_Name")
                 if Config.ESP_Names then
@@ -105,42 +124,46 @@ local function ApplyESP()
                         n = Instance.new("BillboardGui", head)
                         n.Name = "S_Name"; n.Size = UDim2.new(0, 100, 0, 20); n.AlwaysOnTop = true; n.ExtentsOffset = Vector3.new(0, 3, 0)
                         local l = Instance.new("TextLabel", n)
-                        l.BackgroundTransparency = 1; l.Size = UDim2.new(1, 0, 1, 0); l.Text = p.Name
-                        l.TextColor3 = Color3.fromRGB(255, 255, 255); l.TextSize = 13; l.Font = Enum.Font.GothamBold
+                        l.BackgroundTransparency = 1; l.Size = UDim2.new(1, 0, 1, 0); l.Text = p.Name; l.TextColor3 = Color3.fromRGB(255, 255, 255); l.TextSize = 13; l.Font = Enum.Font.GothamBold
                     end
                 elseif n then n:Destroy() end
             end
+            -- Chams (Wallhack)
+            local ch = char:FindFirstChild("S_Chams")
+            if Config.ESP_Chams then
+                if not ch then
+                    ch = Instance.new("Highlight", char)
+                    ch.Name = "S_Chams"; ch.FillColor = Color3.fromRGB(255, 0, 0); ch.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                end
+            elseif ch then ch:Destroy() end
         end
     end
 end
 
 BoxTog = Tabs.ESP:AddToggle("B", {Title = "Rastreador de Cuadros", Callback = function(v) Config.ESP_Boxes = v ApplyESP() end})
 NamTog = Tabs.ESP:AddToggle("N", {Title = "Etiquetas de Nombre", Callback = function(v) Config.ESP_Names = v ApplyESP() end})
+ChamsTog = Tabs.ESP:AddToggle("C", {Title = "Resaltar Cuerpo (Wallhack)", Callback = function(v) Config.ESP_Chams = v ApplyESP() end})
 task.spawn(function() while task.wait(3) do ApplyESP() end end)
 
--- --- TELEPORTACIÓN ---
+-- --- TELEPORT ---
 TPDrop = Tabs.Teleport:AddDropdown("D", { Title = "Seleccionar Objetivo", Values = {} })
 local function RefreshPlayers() 
     local list = {} 
-    for _, p in pairs(game.Players:GetPlayers()) do 
-        if p ~= game.Players.LocalPlayer then table.insert(list, p.Name) end 
-    end 
+    for _, p in pairs(game.Players:GetPlayers()) do if p ~= game.Players.LocalPlayer then table.insert(list, p.Name) end end 
     TPDrop:SetValues(list) 
 end
 RefreshPlayers(); game.Players.PlayerAdded:Connect(RefreshPlayers); game.Players.PlayerRemoving:Connect(RefreshPlayers)
-
 TPBtn = Tabs.Teleport:AddButton({ Title = "Ejecutar Teleporte", Callback = function()
     local target = game.Players:FindFirstChild(TPDrop.Value)
-    if target and target.Character then 
-        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame 
-    end
+    if target and target.Character then game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame end
 end})
 
 -- --- IDIOMA Y ESTÉTICA ---
 local function SetLang(l)
     local T = Locales[l]
     Tabs.Main.Title = T.Player; Tabs.ESP.Title = T.ESP; Tabs.Teleport.Title = T.TP; Tabs.Settings.Title = T.Sett
-    SpdInp:SetTitle(T.Speed); NocTog:SetTitle(T.Noc); BoxTog:SetTitle(T.Box); NamTog:SetTitle(T.Name)
+    SpdInp:SetTitle(T.Speed); NocTog:SetTitle(T.Noc); JumpTog:SetTitle(T.Jump); FovSlid:SetTitle(T.FovT); BrightTog:SetTitle(T.Bright)
+    BoxTog:SetTitle(T.Box); NamTog:SetTitle(T.Name); ChamsTog:SetTitle(T.Chams)
     TPDrop:SetTitle(T.Select); TPBtn:SetTitle(T.Go); ThemeDrop:SetTitle(T.Theme); LangDrop:SetTitle(T.Lang)
     CredPar:SetTitle(T.Cred); CredPar:SetText(T.Desc)
 end
@@ -149,11 +172,7 @@ ThemeDrop = Tabs.Settings:AddDropdown("T", {
     Title = "Estética del Panel",
     Values = {"Dark", "Light", "Amethyst", "Aqua", "Rose"},
     Default = "Dark",
-    Callback = function(v) 
-        pcall(function() Window:SetTheme(v) end)
-        local colors = {Amethyst = Color3.fromRGB(180, 100, 255), Aqua = Color3.fromRGB(0, 255, 255), Rose = Color3.fromRGB(255, 100, 200)}
-        Stroke.Color = colors[v] or Color3.fromRGB(0, 255, 150)
-    end
+    Callback = function(v) pcall(function() Window:SetTheme(v) end) end
 })
 
 LangDrop = Tabs.Settings:AddDropdown("L", {
@@ -164,5 +183,4 @@ LangDrop = Tabs.Settings:AddDropdown("L", {
 })
 
 CredPar = Tabs.Settings:AddParagraph({ Title = "Samigupro (User: roblox)", Content = "v1.5 Remazter | UltraHub Estable" })
-
 Window:SelectTab(1)
